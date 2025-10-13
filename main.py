@@ -107,6 +107,33 @@ def predict_top_player(model, scaler, df_players):
     top = df_players.sort_values('Score_Prob', ascending=False).iloc[0]
     return f"{top['Player']} ({top['Score_Prob']:.2f} likelihood)"
 
+
+def extract_player_names(text: str) -> str:
+    """
+    Extracts player names from text that may include team abbreviations, jersey numbers, and positions.
+    Also handles cases where text is already comma-separated names.
+    Returns a comma-separated string of names only.
+    """
+    # Split by two or more spaces or commas
+    parts = re.split(r'\s{2,}|,\s*', text.strip())
+    names = []
+
+    for part in parts:
+        # Match only the name part before a team abbreviation or number
+        match = re.match(r"^([A-Za-zÀ-ÿ'’\.\- ]+?)(?=\s[A-Z]{2,3}\b|$)", part.strip())
+        if match:
+            name = match.group(1).strip()
+            # Skip empty or short fragments
+            if len(name.split()) >= 2:
+                names.append(name)
+
+    # If no structured matches found, assume it's already just names
+    if not names:
+        names = [n.strip() for n in text.split(',') if n.strip()]
+
+    return ', '.join(names)
+
+
 # -----------------------------
 # Streamlit UI
 # -----------------------------
@@ -116,42 +143,44 @@ st.set_page_config(page_title="NHL Goal Predictor", page_icon="🏒", layout="ce
 st.title("🏒 NHL Goal Predictor")
 st.write("Predict which player from your list is most likely to score, using last season's data from Hockey-Reference.")
 
-season = st.number_input("Select season year", min_value=2020, max_value=2026, value=2026)
-num_seasons = st.number_input("Number of seasons to train on", min_value=1, max_value=5, value=3)
+# season = st.number_input("Select season year", min_value=2020, max_value=2026, value=2026)
+# num_seasons = st.number_input("Number of seasons to train on", min_value=1, max_value=5, value=3)
+season = 2025
+num_seasons = 5
 
-if st.button("Fetch & Train Model"):
-    df = None
-    for ssn in range(season-num_seasons, season):
-        with st.spinner(f"Loading NHL {ssn} skater data..."):
-            try:
-                season_df = fetch_player_data(ssn, season)
-                if df is None:
-                    df = season_df
-                else:
-                    df = pd.concat([df, season_df], ignore_index=True)
-            except Exception as e:
-                st.warning(f"Error fetching data for season {ssn}: {e}")
-    model_filename = f"{season-num_seasons}-{season}.joblib"
-    try:
-        model, scaler = load_model(model_filename)
-        st.success("Model loaded successfully!")
-    except FileNotFoundError:
-        X, y, scaler = prepare_training_data(df)
-        st.warning("No saved model found. Training a new model...")
-        model = train_model(X, y)
-        save_model(model, scaler, model_filename)
-    st.session_state.model = model
-    st.session_state.scaler = scaler
-    st.session_state.df = df
-    st.success(f"Model trained on {len(df)} players!")
+# if st.button("Fetch & Train Model"):
+df = None
+for ssn in range(season-num_seasons, season):
+    with st.spinner(f"Loading NHL {ssn} skater data..."):
+        try:
+            season_df = fetch_player_data(ssn, season)
+            if df is None:
+                df = season_df
+            else:
+                df = pd.concat([df, season_df], ignore_index=True)
+        except Exception as e:
+            st.warning(f"Error fetching data for season {ssn}: {e}")
+model_filename = f"{season-num_seasons}-{season}.joblib"
+try:
+    model, scaler = load_model(model_filename)
+    st.success("Model loaded successfully!")
+except FileNotFoundError:
+    X, y, scaler = prepare_training_data(df)
+    st.warning("No saved model found. Training a new model...")
+    model = train_model(X, y)
+    save_model(model, scaler, model_filename)
+st.session_state.model = model
+st.session_state.scaler = scaler
+st.session_state.df = df
+st.success(f"Model trained on {len(df)} players!")
 
 if "model" in st.session_state:
     st.header("Enter Player Groups")
     st.write("Enter comma-separated names for each group (e.g., `Connor McDavid, Leon Draisaitl, Nathan MacKinnon`).")
 
-    group1 = st.text_input("Group 1 Players")
-    group2 = st.text_input("Group 2 Players")
-    group3 = st.text_input("Group 3 Players")
+    group1 = extract_player_names(st.text_input("Group 1 Players"))
+    group2 = extract_player_names(st.text_input("Group 2 Players"))
+    group3 = extract_player_names(st.text_input("Group 3 Players"))
     missing = []
     if st.button("Predict Scorers"):
         model = st.session_state.model
