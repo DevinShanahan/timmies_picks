@@ -163,20 +163,20 @@ for ssn in range(season-num_seasons, season):
 model_filename = f"{season-num_seasons}-{season}.joblib"
 try:
     model, scaler = load_model(model_filename)
-    st.success("Model loaded successfully!")
+    # st.success("Model loaded successfully!")
 except FileNotFoundError:
     X, y, scaler = prepare_training_data(df)
-    st.warning("No saved model found. Training a new model...")
+    # st.warning("No saved model found. Training a new model...")
     model = train_model(X, y)
     save_model(model, scaler, model_filename)
 st.session_state.model = model
 st.session_state.scaler = scaler
 st.session_state.df = df
-st.success(f"Model trained on {len(df)} players!")
+# st.success(f"Model trained on {len(df)} players!")
 
 if "model" in st.session_state:
     st.header("Enter Player Groups")
-    st.write("Enter comma-separated names for each group (e.g., `Connor McDavid, Leon Draisaitl, Nathan MacKinnon`).")
+    st.write("Copy/Paste list from TH App, or enter comma-separated names for each group.")
 
     group1 = extract_player_names(st.text_input("Group 1 Players"))
     group2 = extract_player_names(st.text_input("Group 2 Players"))
