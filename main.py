@@ -1,17 +1,18 @@
-from io import StringIO
 import json
 import os
 import re
-import streamlit as st
+from io import StringIO
+from pathlib import Path
+
+import joblib
 import pandas as pd
 import requests
+import streamlit as st
 from bs4 import BeautifulSoup
+from ftfy import fix_text
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
-import joblib
-from ftfy import fix_text
 from unidecode import unidecode
-from pathlib import Path
 
 # --- Setup ---
 NAME_MAP_PATH = Path("name_map.json")
@@ -49,8 +50,7 @@ def clean_name(name: str) -> str:
 
 def fetch_player_data(season, max_season):
     """Scrape player table from Hockey Reference"""
-    # False until start predicting with new season
-    current_season = False # season == max_season
+    current_season = season == max_season
     if not current_season and os.path.exists(f'season_{season}.csv'):
         return pd.read_csv(f'season_{season}.csv')
     url = f"https://www.hockey-reference.com/leagues/NHL_{season}_skaters.html"
@@ -145,7 +145,7 @@ st.write("Predict which player from your list is most likely to score, using las
 
 # season = st.number_input("Select season year", min_value=2020, max_value=2026, value=2026)
 # num_seasons = st.number_input("Number of seasons to train on", min_value=1, max_value=5, value=3)
-season = 2025
+season = 2026
 num_seasons = 5
 
 # if st.button("Fetch & Train Model"):
