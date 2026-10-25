@@ -143,9 +143,9 @@ st.set_page_config(page_title="NHL Goal Predictor", page_icon="🏒", layout="ce
 st.title("🏒 NHL Goal Predictor")
 st.write("Predict which player from your list is most likely to score, using last season's data from Hockey-Reference.")
 
-# season = st.number_input("Select season year", min_value=2020, max_value=2026, value=2026)
+# season = st.number_input("Select season year", min_value=2020, max_value=2027, value=2027)
 # num_seasons = st.number_input("Number of seasons to train on", min_value=1, max_value=5, value=3)
-season = 2026
+season = 2027
 num_seasons = 5
 
 # if st.button("Fetch & Train Model"):
